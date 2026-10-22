@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Workspace, WorkspaceMember
+from app.models import Workspace, WorkspaceMember, WorkspaceMemberRole
 
 
 def create_workspace_with_owner(db: Session, workspace: Workspace, member: WorkspaceMember) -> Workspace:
@@ -40,4 +40,23 @@ def update_workspace_name(db: Session, workspace: Workspace, new_name: str) -> W
 
 def delete_workspace(db: Session, workspace: Workspace) -> None:
     db.delete(workspace)
+    db.commit()
+
+def list_members(db: Session, workspace_id: int) -> list[WorkspaceMember]:
+    return list(db.scalars(select(WorkspaceMember).where(WorkspaceMember.workspace_id == workspace_id)).all())
+
+def add_member(db: Session, member: WorkspaceMember) -> WorkspaceMember:
+    db.add(member)
+    db.commit()
+    db.refresh(member)
+    return member
+
+def update_member_role(db: Session, member: WorkspaceMember, new_role: WorkspaceMemberRole) -> WorkspaceMember:
+    member.role = new_role
+    db.commit()
+    db.refresh(member)
+    return member
+
+def delete_member(db: Session, member: WorkspaceMember) -> None:
+    db.delete(member)
     db.commit()
