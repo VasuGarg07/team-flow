@@ -19,11 +19,7 @@ def get_current_user(
     if credentials is None:
         raise UnauthorizedError("Missing token")
 
-    try:
-        user_id = decode_access_token(credentials.credentials)
-    except jwt.InvalidTokenError:
-        raise UnauthorizedError("Invalid or expired token")
-
+    user_id = decode_access_token(credentials.credentials)
     user = get_user_by_id(db, user_id)
     if user is None:
         raise UnauthorizedError("Invalid or expired token")
