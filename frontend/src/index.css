@@ -1,0 +1,10 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "tailwindcss";
+@import "./styles/theme.css";
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+}
