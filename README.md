@@ -86,6 +86,11 @@ All routes can be tried at http://127.0.0.1:8000/docs.
 | POST | /workspaces/{workspace_id}/projects | Creates a project | Owner, Admin |
 | PATCH | /workspaces/{workspace_id}/projects/{project_id} | Updates a project (only the fields you send) | Owner, Admin |
 | DELETE | /workspaces/{workspace_id}/projects/{project_id} | Deletes a project and its tasks | Owner, Admin |
+| GET | /workspaces/{workspace_id}/projects/{project_id}/tasks | Lists the project's tasks | Any member |
+| GET | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Returns one task | Any member |
+| POST | /workspaces/{workspace_id}/projects/{project_id}/tasks | Creates a task, and you become its reporter | Any member |
+| PATCH | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Updates a task (only the fields you send) | Owner, Admin, reporter or assignee |
+| DELETE | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Deletes a task | Owner, Admin or reporter |
 
 "Logged in" means an `Authorization: Bearer <access token>` header.
 

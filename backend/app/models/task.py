@@ -8,13 +8,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 class TaskStatus(str, Enum):
     OPEN = "OPEN"
-    IN_PROGRESS = "IN PROGRESS"
+    IN_PROGRESS = "IN_PROGRESS"
     TESTING = "TESTING"
     LIVE = "LIVE"
     VOID = "VOID"
 
 class TaskPriority(str, Enum):
-    LIVE_ISSUE = "LIVE ISSUE"
+    LIVE_ISSUE = "LIVE_ISSUE"
     BLOCKER = "BLOCKER"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -32,5 +32,5 @@ class Task(Base):
     priority: Mapped[TaskPriority] = mapped_column(default=TaskPriority.HIGH)
     story_points: Mapped[int] = mapped_column(default=1)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
     due_date: Mapped[datetime | None] = mapped_column()
