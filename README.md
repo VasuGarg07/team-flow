@@ -13,11 +13,11 @@ I am building it in 30 days to learn how real backends work.
 - Projects inside workspaces, protected so one workspace can never read another's data
 - One clear JSON shape for every error
 - PostgreSQL schema for users, workspaces, members, projects, tasks and comments
+- Task lists with filters, sorting and pages
+- A seed script that fills the local database with realistic demo data
 
 ## Coming next
 
-- Tasks, with assignees, status and priority
-- Filtering, sorting and pagination
 - Comments and file attachments
 - Caching, rate limiting, live task updates and background jobs
 
@@ -53,11 +53,15 @@ The `frontend` folder (React, TypeScript, Vite) is set up but not used yet.
    ```
    uv run alembic upgrade head
    ```
-6. Start the server:
+6. Optional: fill the database with demo data (this deletes everything in the local database first):
+   ```
+   uv run python -m scripts.seed --yes
+   ```
+7. Start the server:
    ```
    uv run fastapi dev app/main.py
    ```
-7. Open http://127.0.0.1:8000/health. You should see `{"status": "ok"}`.
+8. Open http://127.0.0.1:8000/health. You should see `{"status": "ok"}`.
 
 All routes can be tried at http://127.0.0.1:8000/docs.
 
@@ -91,6 +95,7 @@ All routes can be tried at http://127.0.0.1:8000/docs.
 | POST | /workspaces/{workspace_id}/projects/{project_id}/tasks | Creates a task, and you become its reporter | Any member |
 | PATCH | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Updates a task (only the fields you send) | Owner, Admin, reporter or assignee |
 | DELETE | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Deletes a task | Owner, Admin or reporter |
+| GET | /workspaces/{workspace_id}/projects/{project_id}/tasks | Lists the project's tasks, with filters, sorting and pages | Any member |
 
 "Logged in" means an `Authorization: Bearer <access token>` header.
 
@@ -136,6 +141,58 @@ Rules behind the table:
 - Every project query is filtered by both the workspace id and the project id. A valid project id from another workspace returns 404 (this prevents broken object level authorization).
 - The current user always comes from the token, never from the request body.
 
+## Listing tasks: filters, sorting and pages
+
+`GET /workspaces/{workspace_id}/projects/{project_id}/tasks` accepts these query parameters:
+
+| Parameter | Values | Default |
+|---|---|---|
+| `status` | OPEN, IN_PROGRESS, TESTING, LIVE, VOID | all |
+| `priority` | LIVE_ISSUE, BLOCKER, HIGH, MEDIUM, LOW | all |
+| `assignee_id` | a user id | all |
+| `sort_by` | created_at, due_date, priority, status, story_points, name | created_at |
+| `order` | asc, desc | desc |
+| `page` | 1 or more | 1 |
+| `limit` | 1 to 100 | 20 |
+
+The answer looks like this:
+
+```json
+{
+  "items": [],
+  "total": 200,
+  "page": 1,
+  "limit": 20
+}
+```
+
+Notes:
+
+- `sort_by` only accepts the names in the table, so a client can never choose a column freely.
+- Every sort ends with the task id, so two pages never repeat or skip a task, and tasks with no value (like a missing due date) always come last.
+- This uses offset pagination. For very long feeds a cursor would be faster on deep pages.
+
+## Demo data
+
+The seed script deletes everything in the local database and creates twelve people, three workspaces, nine projects, about eighty five tasks and some comments. Add `--bulk` for five thousand extra tasks in one project.
+
+```
+uv run python -m scripts.seed --yes
+uv run python -m scripts.seed --yes --bulk
+```
+
+Every demo user has the password `password123`.
+
+| Email | Role |
+|---|---|
+| aarav.mehta@teamflow.test | Owner of Northwind Studio and Weekend Hacks, member of Bright Labs |
+| priya.nair@teamflow.test | Admin of Northwind Studio, member of Bright Labs |
+| rohan.verma@teamflow.test | Member of Northwind Studio |
+| meera.krishnan@teamflow.test | Owner of Bright Labs |
+| arjun.singh@teamflow.test | Admin of Bright Labs |
+
+The script refuses to run unless `--yes` is given and the database is on localhost.
+
 ## How login works
 
 1. Login gives an access token (15 minutes) in the response body, and sets a refresh token (7 days) in an HttpOnly cookie.
@@ -163,3 +220,4 @@ All code is in `backend/app`:
 - `errors.py` and `error_handlers.py` - app errors and the one JSON error format
 - `config.py` and `database.py` - settings from `.env` and the database connection
 - `../migrations/` - Alembic database migrations
+- `scripts/seed.py` - fills the local database with demo data
