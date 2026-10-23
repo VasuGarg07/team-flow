@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import {
   fetchCurrentUser,
@@ -7,7 +8,7 @@ import {
   type RegisterInput,
   type User,
 } from "@/api/auth";
-import { refreshAccessToken } from "@/lib/api";
+import { refreshAccessToken, setSessionExpiredHandler } from "@/lib/api";
 
 type AuthStatus = "loading" | "authenticated" | "guest";
 
@@ -24,6 +25,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<User | null>(null);
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      queryClient.clear();
+      setUser(null);
+      setStatus("guest");
+    });
+    return () => setSessionExpiredHandler(null);
+  }, [queryClient]);
 
   useEffect(() => {
     async function restoreSession() {
@@ -53,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await logoutRequest();
+    queryClient.clear();
     setUser(null);
     setStatus("guest");
   }

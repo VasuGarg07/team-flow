@@ -24,6 +24,11 @@ type RequestOptions = {
 
 let accessToken: string | null = null;
 let refreshInFlight: Promise<string | null> | null = null;
+let onSessionExpired: (() => void) | null = null;
+
+export function setSessionExpiredHandler(handler: (() => void) | null): void {
+  onSessionExpired = handler;
+}
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
@@ -82,6 +87,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     const newToken = await refreshAccessToken();
     if (newToken !== null) {
       response = await sendRequest(path, options);
+    } else if (onSessionExpired !== null) {
+      onSessionExpired();
     }
   }
 

@@ -13,6 +13,7 @@ export default defineConfig({
     proxy: {
       "/auth": backendUrl,
       "/users": backendUrl,
+      "/workspaces": backendUrl,
       "/health": backendUrl,
     },
   },
