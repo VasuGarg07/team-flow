@@ -22,7 +22,7 @@ from app.models import (
 from app.security import hash_password
 
 SEED_PASSWORD = "password123"
-SEED_DOMAIN = "teamflow.test"
+SEED_DOMAIN = "teamflow.example"
 BULK_WORKSPACE = "Bright Labs"
 BULK_TASK_COUNT = 5000
 

@@ -1,5 +1,5 @@
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Workspace, WorkspaceMember, WorkspaceMemberRole
 
@@ -14,13 +14,19 @@ def create_workspace_with_owner(db: Session, workspace: Workspace, member: Works
     db.refresh(workspace)
     return workspace
 
-def list_workspaces_for_user(db: Session, user_id: int) -> list[Workspace]:
+def list_workspaces_for_user(db: Session, user_id: int) -> list[tuple[Workspace, WorkspaceMemberRole]]:
     statement = (
-        select(Workspace)
+        select(Workspace, WorkspaceMember.role)
         .join(WorkspaceMember, WorkspaceMember.workspace_id == Workspace.id)
         .where(WorkspaceMember.user_id == user_id)
     )
-    return list(db.scalars(statement).all())
+    rows = db.execute(statement).all()
+
+    result: list[tuple[Workspace, WorkspaceMemberRole]] = []
+    for workspace, role in rows:
+        result.append((workspace, role))
+    return result
+
 
 def get_member(db: Session, workspace_id: int, user_id: int) -> WorkspaceMember | None:
     statement = (
@@ -43,7 +49,14 @@ def delete_workspace(db: Session, workspace: Workspace) -> None:
     db.commit()
 
 def list_members(db: Session, workspace_id: int) -> list[WorkspaceMember]:
-    return list(db.scalars(select(WorkspaceMember).where(WorkspaceMember.workspace_id == workspace_id)).all())
+    statement = (
+        select(WorkspaceMember)
+        .where(WorkspaceMember.workspace_id == workspace_id)
+    ).options(
+        joinedload(WorkspaceMember.user)
+    )
+
+    return list(db.scalars(statement).all())
 
 def add_member(db: Session, member: WorkspaceMember) -> WorkspaceMember:
     db.add(member)

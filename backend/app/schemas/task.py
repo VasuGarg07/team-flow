@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import TaskPriority, TaskStatus
-
+from .user import UserRead
 
 class TaskCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -39,7 +39,8 @@ class TaskRead(BaseModel):
     due_date: datetime | None
     created_at: datetime
     updated_at: datetime
-
+    assignee: UserRead | None
+    reporter: UserRead
 
 class TaskPage(BaseModel):
     items: list[TaskRead]

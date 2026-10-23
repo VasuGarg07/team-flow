@@ -2,6 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.models import WorkspaceMemberRole
+from .user import UserRead
 
 class WorkspaceCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
@@ -27,4 +28,8 @@ class WorkspaceMemberRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     user_id: int
+    role: WorkspaceMemberRole
+    user: UserRead
+
+class WorkspaceDetail(WorkspaceRead):
     role: WorkspaceMemberRole

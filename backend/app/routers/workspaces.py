@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 import app.services.workspace_service as workspace_service
-from app.schemas.workspace import WorkspaceCreate, WorkspaceRead, WorkspaceUpdate, WorkspaceMemberRead, WorkspaceMemberRoleUpdate, WorkspaceMemberAdd
+from app.schemas.workspace import WorkspaceCreate, WorkspaceDetail, WorkspaceRead, WorkspaceUpdate, WorkspaceMemberRead, WorkspaceMemberRoleUpdate, WorkspaceMemberAdd
 from app.database import get_db
 from app.models import User, Workspace, WorkspaceMember, WorkspaceMemberRole
 from app.dependencies import get_current_user, require_workspace_role
@@ -18,20 +18,21 @@ def create_workspace_endpoint(
 ) -> Workspace:
     return workspace_service.create_workspace(db, data, current_user.id)
 
-@router.get("", response_model=list[WorkspaceRead])
+@router.get("", response_model=list[WorkspaceDetail])
 def list_workspaces_endpoint(
-    db: Session = Depends(get_db), 
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
-) -> list[Workspace]:
+) -> list[WorkspaceDetail]:
     return workspace_service.list_workspaces(db, current_user.id)
 
-@router.get("/{workspace_id}", response_model=WorkspaceRead)
+
+@router.get("/{workspace_id}", response_model=WorkspaceDetail)
 def get_workspace_endpoint(
-    workspace_id: int, 
-    db: Session = Depends(get_db), 
+    workspace_id: int,
+    db: Session = Depends(get_db),
     member: WorkspaceMember = Depends(require_workspace_role(WorkspaceMemberRole.OWNER, WorkspaceMemberRole.ADMIN, WorkspaceMemberRole.MEMBER))
-) -> Workspace:
-    return workspace_service.get_workspace(db, workspace_id)
+) -> WorkspaceDetail:
+    return workspace_service.get_workspace_detail(db, workspace_id, member.role)
 
 @router.patch("/{workspace_id}", response_model=WorkspaceRead)
 def rename_workspace_endpoint(

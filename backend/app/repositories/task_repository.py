@@ -1,5 +1,5 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Task, TaskStatus, TaskPriority
 
@@ -39,6 +39,8 @@ def list_tasks(
         statement = statement.where(Task.assignee_id == assignee_id)
 
     total = db.scalar(select(func.count()).select_from(statement.subquery()))
+    statement = statement.options(joinedload(Task.assignee), joinedload(Task.reporter))
+    
     sort_column = SORTABLE_COLUMNS[sort_by]
     if descending:
         statement = statement.order_by(sort_column.desc().nulls_last(), Task.id)
