@@ -4,8 +4,8 @@ import app.repositories.task_repository as task_repository
 import app.repositories.workspace_repository as workspace_repository
 import app.services.project_service as project_service
 from app.errors import BadRequestError, ForbiddenError, NotFoundError
-from app.models import Task, WorkspaceMember, WorkspaceMemberRole
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.models import Task, WorkspaceMember, WorkspaceMemberRole, TaskStatus, TaskPriority
+from app.schemas.task import TaskCreate, TaskPage, TaskRead, TaskUpdate
 
 def ensure_workspace_member(db: Session, workspace_id: int, user_id: int) -> None:
     member = workspace_repository.get_member(db, workspace_id, user_id)
@@ -16,9 +16,27 @@ def can_change_task(caller: WorkspaceMember, task: Task) -> bool:
     return (caller.role in [WorkspaceMemberRole.ADMIN, WorkspaceMemberRole.OWNER]) or task.reporter_id == caller.user_id
 
 
-def list_tasks(db: Session, workspace_id: int, project_id: int) -> list[Task]:
+def list_tasks(
+    db: Session, 
+    workspace_id: int, 
+    project_id: int,
+    status: TaskStatus | None,
+    priority: TaskPriority | None,
+    assignee_id: int | None,
+    sort_by: str,
+    descending: bool,
+    page: int,
+    limit: int
+) -> TaskPage:
     project_service.get_project(db, workspace_id, project_id)
-    return task_repository.list_tasks(db, project_id)
+    tasks, total = task_repository.list_tasks(
+        db, project_id, status, priority, assignee_id, sort_by, descending, page, limit
+    )
+
+    items: list[TaskRead] = []
+    for task in tasks:
+        items.append(TaskRead.model_validate(task))
+    return TaskPage(items=items, total=total, page=page, limit=limit)
 
 
 def get_task(db: Session, workspace_id: int, project_id: int, task_id: int) -> Task:

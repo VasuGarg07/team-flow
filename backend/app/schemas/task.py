@@ -39,3 +39,10 @@ class TaskRead(BaseModel):
     due_date: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+class TaskPage(BaseModel):
+    items: list[TaskRead]
+    total: int
+    page: int
+    limit: int
