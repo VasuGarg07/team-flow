@@ -9,15 +9,17 @@ I am building it in 30 days to learn how real backends work.
 - Register, log in, refresh the session, and log out
 - Passwords are hashed with Argon2 and never stored as plain text
 - Short-lived access tokens and a refresh token kept in an HttpOnly cookie
-- Create and read users, with one clear JSON shape for every error
+- Workspaces with three roles (Owner, Admin, Member) and member management
+- Projects inside workspaces, protected so one workspace can never read another's data
+- One clear JSON shape for every error
 - PostgreSQL schema for users, workspaces, members, projects, tasks and comments
 
 ## Coming next
 
-- Workspaces with roles (Owner, Admin, Member)
-- Projects and tasks, with filters, sorting and pagination
+- Tasks, with assignees, status and priority
+- Filtering, sorting and pagination
 - Comments and file attachments
-- Live task updates and background jobs for notifications
+- Caching, rate limiting, live task updates and background jobs
 
 ## Tech used
 
@@ -61,17 +63,31 @@ All routes can be tried at http://127.0.0.1:8000/docs.
 
 ## Endpoints so far
 
-| Method | Path | What it does | Needs login |
-|--------|------|--------------|-------------|
-| GET | /health | Says the server is running | No |
-| POST | /auth/register | Creates an account | No |
-| POST | /auth/login | Returns an access token and sets the refresh cookie | No |
-| POST | /auth/refresh | Returns a new access token using the refresh cookie | Cookie |
-| DELETE | /auth/logout | Clears the refresh cookie | Cookie |
-| GET | /auth/me | Returns the signed-in user | Yes |
-| GET | /users/{id} | Returns one user | Yes |
+| Method | Path | What it does | Who can use it |
+|--------|------|--------------|----------------|
+| GET | /health | Says the server is running | Anyone |
+| POST | /auth/register | Creates an account | Anyone |
+| POST | /auth/login | Returns an access token and sets the refresh cookie | Anyone |
+| POST | /auth/refresh | Returns a new access token using the refresh cookie | Refresh cookie |
+| DELETE | /auth/logout | Clears the refresh cookie | Refresh cookie |
+| GET | /auth/me | Returns the signed-in user | Logged in |
+| GET | /users/{id} | Returns one user | Logged in |
+| POST | /workspaces | Creates a workspace, and you become its owner | Logged in |
+| GET | /workspaces | Lists the workspaces you belong to | Logged in |
+| GET | /workspaces/{workspace_id} | Returns one workspace | Any member |
+| PATCH | /workspaces/{workspace_id} | Renames the workspace | Owner, Admin |
+| DELETE | /workspaces/{workspace_id} | Deletes the workspace and everything inside it | Owner |
+| GET | /workspaces/{workspace_id}/members | Lists the members | Any member |
+| POST | /workspaces/{workspace_id}/members | Adds a member by email | Owner, Admin |
+| PATCH | /workspaces/{workspace_id}/members/{target_user_id} | Changes a member's role | Owner |
+| DELETE | /workspaces/{workspace_id}/members/{target_user_id} | Removes a member | Owner, Admin |
+| GET | /workspaces/{workspace_id}/projects | Lists the workspace's projects | Any member |
+| GET | /workspaces/{workspace_id}/projects/{project_id} | Returns one project | Any member |
+| POST | /workspaces/{workspace_id}/projects | Creates a project | Owner, Admin |
+| PATCH | /workspaces/{workspace_id}/projects/{project_id} | Updates a project (only the fields you send) | Owner, Admin |
+| DELETE | /workspaces/{workspace_id}/projects/{project_id} | Deletes a project and its tasks | Owner, Admin |
 
-"Yes" means an `Authorization: Bearer <access token>` header.
+"Logged in" means an `Authorization: Bearer <access token>` header.
 
 ## Error format
 
@@ -87,6 +103,33 @@ Every error uses the same shape:
 ```
 
 Input mistakes (status 422) also have a `details` list with the field name and a message.
+
+## Roles and permissions
+
+A role belongs to one person in one workspace. Someone can be the owner of one workspace and a plain member of another.
+
+| Action | Owner | Admin | Member |
+|---|---|---|---|
+| See the workspace, its members and its projects | Yes | Yes | Yes |
+| Rename the workspace | Yes | Yes | No |
+| Delete the workspace | Yes | No | No |
+| Add a member | Yes | Yes | No |
+| Add an admin, or change a role | Yes | No | No |
+| Remove a member | Yes | Yes | No |
+| Remove an admin | Yes | No | No |
+| Create, update or delete projects | Yes | Yes | No |
+
+Rules behind the table:
+
+- A workspace has exactly one owner, set when it is created. The owner cannot be removed or demoted, and nobody else can be made an owner.
+- Admins can add and remove plain members only.
+- Roles are looked up from the database on every request, not stored in the token, because they are per workspace and can change.
+
+## How data is kept separate
+
+- A person who is not a member of a workspace gets 404 for it, the same answer as for a workspace that does not exist, so ids cannot be probed.
+- Every project query is filtered by both the workspace id and the project id. A valid project id from another workspace returns 404 (this prevents broken object level authorization).
+- The current user always comes from the token, never from the request body.
 
 ## How login works
 
@@ -110,7 +153,7 @@ All code is in `backend/app`:
 - `repositories/` - database queries
 - `schemas/` - Pydantic classes for what comes in and what goes out
 - `models/` - SQLAlchemy classes, one per database table
-- `dependencies.py` - shared checks, like finding the signed-in user
+- `dependencies.py` - shared checks, like finding the signed-in user and checking a workspace role
 - `security.py` - password hashing and tokens
 - `errors.py` and `error_handlers.py` - app errors and the one JSON error format
 - `config.py` and `database.py` - settings from `.env` and the database connection
