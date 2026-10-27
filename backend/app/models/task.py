@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import ForeignKey, String, func
+from sqlalchemy import ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -40,3 +40,7 @@ class Task(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
     due_date: Mapped[datetime | None] = mapped_column()
+
+    __table_args__ = (
+        Index("idx_tasks_project_status_created", "project_id", "status", "created_at"),
+    )
