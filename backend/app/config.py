@@ -11,5 +11,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
     COOKIE_SECURE: bool
+    REDIS_URL: str
 
 app_settings = Settings()

@@ -23,7 +23,7 @@ def list_projects_endpoint(
     workspace_id: int,
     db: Session = Depends(get_db), 
     member: WorkspaceMember = Depends(require_workspace_role(WorkspaceMemberRole.OWNER, WorkspaceMemberRole.ADMIN, WorkspaceMemberRole.MEMBER))
-) -> list[Project]:
+) -> list[ProjectRead]:
     return project_service.list_projects(db, workspace_id)
 
 @router.get("/{project_id}", response_model=ProjectRead)
