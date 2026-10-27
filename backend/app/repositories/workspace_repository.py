@@ -1,7 +1,7 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Workspace, WorkspaceMember, WorkspaceMemberRole
+from app.models import Workspace, WorkspaceMember, WorkspaceMemberRole, Task, Project
 
 
 def create_workspace_with_owner(db: Session, workspace: Workspace, member: WorkspaceMember) -> Workspace:
@@ -71,5 +71,17 @@ def update_member_role(db: Session, member: WorkspaceMember, new_role: Workspace
     return member
 
 def delete_member(db: Session, member: WorkspaceMember) -> None:
+    statement = (
+        update(Task)
+        .where(
+            Task.assignee_id == member.user_id,
+            Task.project_id.in_(
+                select(Project.id)
+                .where(Project.workspace_id == member.workspace_id)
+            )
+        )
+        .values(assignee_id=None)
+    )
+    db.execute(statement)
     db.delete(member)
     db.commit()
