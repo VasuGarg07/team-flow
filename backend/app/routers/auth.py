@@ -9,7 +9,7 @@ from app.database import get_db
 from app.schemas.auth import LoginRequest, TokenResponse
 from app.services.user_service import create_user
 from app.services.auth_service import login, refresh
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, rate_limiter
 from app.config import app_settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -17,11 +17,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 COOKIE_SECURE = app_settings.COOKIE_SECURE
 MAX_AGE = app_settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
-@router.post("/register", response_model=UserRead, status_code=201)
+@router.post("/register", response_model=UserRead, status_code=201, dependencies=[Depends(rate_limiter("register", 5, 60))])
 def register_user_endpoint(data: UserCreate, db: Session = Depends(get_db)) -> User:
     return create_user(db, data)
 
-@router.post("/login", response_model=TokenResponse, status_code=200)
+@router.post("/login", response_model=TokenResponse, status_code=200, dependencies=[Depends(rate_limiter("login", 5, 60))])
 def login_user_endpoint(data: LoginRequest, response: Response, db: Session = Depends(get_db)) -> TokenResponse:
     tokens = login(db, data)
     response.set_cookie(

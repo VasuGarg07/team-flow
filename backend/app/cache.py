@@ -29,3 +29,18 @@ def delete_cache(key: str) -> None:
 
 def projects_cache_key(workspace_id: int) -> str:
     return f"workspace:{workspace_id}:projects"
+
+def allow_request(key: str, limit: int = 10, window: int = 60) -> bool:
+    try:
+        count = redis_client.incr(key)
+        redis_client.expire(key, window, nx=True)
+        return count <= limit
+    except RedisError:
+        return True
+
+def seconds_until_reset(key: str, window: int) -> int:
+    try:
+        ttl = redis_client.ttl(key)
+    except RedisError:
+        return window
+    return ttl if ttl > 0 else window

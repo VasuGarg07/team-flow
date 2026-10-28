@@ -1,16 +1,17 @@
 from collections.abc import Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, WorkspaceMember, WorkspaceMemberRole
-from app.errors import UnauthorizedError, NotFoundError, ForbiddenError
+from app.errors import TooManyRequestsError, UnauthorizedError, NotFoundError, ForbiddenError
 from app.security import decode_access_token
 from app.repositories.user_repository import get_user_by_id
 from app.repositories.workspace_repository import get_member
+from app.cache import allow_request, seconds_until_reset
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -40,3 +41,15 @@ def require_workspace_role(*allowed_roles: WorkspaceMemberRole) -> Callable[...,
         return member
 
     return check_role
+
+def rate_limiter(name: str, limit: int = 10, window: int = 60) -> Callable[[Request], None]:
+    def check_rate_limit(request: Request) -> None:
+        client_ip = request.client.host if request.client else "unknown"
+        key =  f"ratelimit:{name}:{client_ip}"
+        if not allow_request(key, limit, window):
+            raise TooManyRequestsError(
+                "Too many requests, try again later",
+                seconds_until_reset(key, window)
+            )
+
+    return check_rate_limit
