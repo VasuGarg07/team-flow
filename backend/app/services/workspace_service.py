@@ -5,6 +5,8 @@ from app.repositories.user_repository import get_user_by_email
 from app.schemas.workspace import WorkspaceCreate, WorkspaceDetail, WorkspaceMemberAdd
 from app.models import Workspace, WorkspaceMember, WorkspaceMemberRole
 from app.errors import NotFoundError, BadRequestError, ForbiddenError, ConflictError
+from app.cache import delete_cache, projects_cache_key
+
 
 def create_workspace(db: Session, data: WorkspaceCreate, user_id: int) -> Workspace:
     workspace = Workspace(name=data.name)
@@ -40,6 +42,8 @@ def rename_workspace(db: Session, workspace_id: int, new_name: str) -> Workspace
 def delete_workspace(db: Session, workspace_id: int) -> None:
     workspace = get_workspace(db, workspace_id)
     workspace_repository.delete_workspace(db, workspace)
+    # clear cache
+    delete_cache(projects_cache_key(workspace_id))
 
 def list_members(db: Session, workspace_id: int) -> list[WorkspaceMember]:
     return workspace_repository.list_members(db, workspace_id)

@@ -5,18 +5,21 @@ import app.repositories.project_repository as project_repository
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectRead
 from app.models import Project
 from app.errors import NotFoundError
-from app.cache import read_cache, write_cache
+from app.cache import read_cache, write_cache, delete_cache, projects_cache_key
 
 adapter = TypeAdapter(list[ProjectRead])
 
 def create_project(db: Session, workspace_id: int, data: ProjectCreate) -> Project:
     project = Project(name=data.name, description=data.description)
     project.workspace_id = workspace_id
-    return project_repository.create_project(db, project)
+    res = project_repository.create_project(db, project)
+    # clear cache
+    delete_cache(projects_cache_key(workspace_id))
+    return res
 
 def list_projects(db: Session, workspace_id: int) -> list[ProjectRead]:
     # Check in cache first
-    key = f"workspace:{workspace_id}:projects"
+    key = projects_cache_key(workspace_id)
     text = read_cache(key)
 
     if text is not None:
@@ -28,7 +31,7 @@ def list_projects(db: Session, workspace_id: int) -> list[ProjectRead]:
     projects_text = adapter.dump_json(project_reads).decode()
     write_cache(key, projects_text)
 
-    return projects
+    return project_reads
 
 def get_project(db: Session, workspace_id: int, project_id: int) -> Project:
     project = project_repository.get_project(db, workspace_id, project_id)
@@ -44,8 +47,14 @@ def update_project(db: Session, workspace_id: int, project_id: int, data: Projec
     if "description" in data.model_fields_set:
         project.description = data.description
 
-    return project_repository.update_project(db, project)
+    res = project_repository.update_project(db, project)
+    
+    # clear cache
+    delete_cache(projects_cache_key(workspace_id))
+    return res
 
 def delete_project(db: Session, workspace_id: int, project_id: int) -> None:
     project = get_project(db, workspace_id, project_id)
     project_repository.delete_project(db, project)
+    # clear cache
+    delete_cache(projects_cache_key(workspace_id))

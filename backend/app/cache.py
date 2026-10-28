@@ -20,3 +20,12 @@ def write_cache(key: str, value: str, ttl_seconds: int = 60) -> None:
         redis_client.set(key, value, ex=ttl_seconds)
     except RedisError:
         pass
+
+def delete_cache(key: str) -> None:
+    try:
+        redis_client.delete(key)
+    except RedisError:
+        pass
+
+def projects_cache_key(workspace_id: int) -> str:
+    return f"workspace:{workspace_id}:projects"
