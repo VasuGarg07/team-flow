@@ -1,6 +1,6 @@
 from redis import Redis, RedisError
 
-from .config import app_settings
+from app.config import app_settings
 
 redis_client = Redis.from_url(
     app_settings.REDIS_URL, 

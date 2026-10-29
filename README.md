@@ -16,11 +16,14 @@ I am building it in 30 days to learn how real backends work.
 - One clear JSON shape for every error
 - PostgreSQL schema for users, workspaces, members, projects, tasks and comments
 - A seed script that fills the local database with realistic demo data
+- An index for the task list query, checked with EXPLAIN ANALYZE
+- Removing a member un-assigns their tasks in the same transaction
+- The project list is cached in Redis and cleared when projects change
+- Login and register are rate limited per IP, with a Retry-After header
+- Assigning a task queues a notification job that a separate worker runs
 
 ## Coming next
 
-- Indexes, query plans and database transactions
-- Caching, rate limiting and background jobs
 - Comments, file attachments and live task updates
 - Docker Compose, automated tests, CI and deployment
 
@@ -30,7 +33,8 @@ I am building it in 30 days to learn how real backends work.
 - PostgreSQL with SQLAlchemy and Alembic migrations
 - Pydantic for request and response checks
 - JWT (PyJWT) and Argon2 (pwdlib) for authentication
-- uv for packages, Docker for the local database
+- Redis for the cache, the rate limiter and the job queue, and RQ for background jobs
+- uv for packages, Docker for the local database and Redis
 - React, TypeScript, Vite and Tailwind for the frontend
 
 The `frontend` folder holds a React app that uses this API.
@@ -40,6 +44,10 @@ The `frontend` folder holds a React app that uses this API.
 1. Start PostgreSQL in Docker:
    ```
    docker run --name teamflow-db -e POSTGRES_USER=<user> -e POSTGRES_PASSWORD=<password> -e POSTGRES_DB=<db_name> -p 5432:5432 -v teamflow_pgdata:/var/lib/postgresql/data -d postgres:16
+   ```
+   Start Redis in Docker too:
+   ```
+   docker run --name teamflow-redis -p 6379:6379 -d redis:7
    ```
 2. Go into the backend folder:
    ```
@@ -66,6 +74,10 @@ The `frontend` folder holds a React app that uses this API.
    uv run fastapi dev app/main.py
    ```
 8. Open http://127.0.0.1:8000/health. You should see `{"status": "ok"}`.
+9. To run background jobs, start the worker in a Linux shell (WSL) in a second terminal. It does not run on plain Windows:
+   ```
+   uv run rq worker default
+   ```
 
 All routes can be tried at http://127.0.0.1:8000/docs.
 
@@ -190,6 +202,14 @@ Notes:
 - This uses offset pagination. For very long feeds a cursor would be faster on deep pages.
 - The people on each task are loaded in the same query (a join), so the number of queries does not grow with the page size.
 
+## Redis: cache, rate limit and jobs
+
+Redis is used for three things. If Redis is down the app still works, only slower and without limits.
+
+- **Cache:** `GET /workspaces/{workspace_id}/projects` is saved under `workspace:{id}:projects` for 60 seconds. Creating, updating or deleting a project, or deleting the workspace, deletes that key after the database commit. The role check always runs before the cache.
+- **Rate limit:** `POST /auth/login` and `POST /auth/register` allow 5 requests per 60 seconds per IP. Over the limit the answer is 429 with a `Retry-After` header. It is a fixed window counter, so a burst at the window edge is possible, and if Redis is down the request is allowed.
+- **Background jobs:** when a task is created with an assignee, or updated to a different assignee (not yourself), a job `send_assignment_notification` is queued after the commit. A worker runs it with up to 3 retries. It only logs a line for now. The job gets the task id and opens its own database session.
+
 ## Demo data
 
 The seed script deletes everything in the local database and creates twelve people, three workspaces, nine projects, about eighty five tasks and some comments. Add `--bulk` for five thousand extra tasks in one project.
@@ -203,11 +223,11 @@ Every demo user has the password `password123`.
 
 | Email | Role |
 |---|---|
-| aarav.mehta@teamflow.test | Owner of Northwind Studio and Weekend Hacks, member of Bright Labs |
-| priya.nair@teamflow.test | Admin of Northwind Studio, member of Bright Labs |
-| rohan.verma@teamflow.test | Member of Northwind Studio |
-| meera.krishnan@teamflow.test | Owner of Bright Labs |
-| arjun.singh@teamflow.test | Admin of Bright Labs |
+| aarav.mehta@teamflow.example | Owner of Northwind Studio and Weekend Hacks, member of Bright Labs |
+| priya.nair@teamflow.example | Admin of Northwind Studio, member of Bright Labs |
+| rohan.verma@teamflow.example | Member of Northwind Studio |
+| meera.krishnan@teamflow.example | Owner of Bright Labs |
+| arjun.singh@teamflow.example | Admin of Bright Labs |
 
 The script refuses to run unless `--yes` is given and the database is on localhost.
 
@@ -247,6 +267,9 @@ backend/
     error_handlers.py  the one JSON error format
     config.py       settings from .env
     database.py     the database connection
+    cache.py        Redis cache and rate limit counter
+    queue.py        the job queue
+    jobs.py         the background jobs the worker runs
   migrations/       Alembic database migrations
   scripts/seed.py   fills the local database with demo data
 frontend/           React, TypeScript and Vite app

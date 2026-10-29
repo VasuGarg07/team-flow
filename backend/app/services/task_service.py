@@ -6,6 +6,8 @@ import app.services.project_service as project_service
 from app.errors import BadRequestError, ForbiddenError, NotFoundError
 from app.models import Task, WorkspaceMember, WorkspaceMemberRole, TaskStatus, TaskPriority
 from app.schemas.task import TaskCreate, TaskPage, TaskRead, TaskUpdate
+from app.queue import enqueue_assignment_notification
+
 
 def ensure_workspace_member(db: Session, workspace_id: int, user_id: int) -> None:
     member = workspace_repository.get_member(db, workspace_id, user_id)
@@ -61,12 +63,18 @@ def create_task(db: Session, workspace_id: int, project_id: int, caller: Workspa
     story_points=data.story_points,
     due_date=data.due_date
     )
-    return task_repository.create_task(db, task)
+
+    created = task_repository.create_task(db, task)
+    if created.assignee_id is not None and created.assignee_id != caller.user_id:
+        enqueue_assignment_notification(task_id=created.id)
+    return created
 
 def update_task(db: Session, workspace_id: int, project_id: int, task_id: int, caller: WorkspaceMember, data: TaskUpdate) -> Task:
     task = get_task(db, workspace_id, project_id, task_id)
     if not (can_change_task(caller, task) or task.assignee_id == caller.user_id):
         raise ForbiddenError("You do not have access to do this")
+
+    old_assignee_id = task.assignee_id
 
     if "assignee_id" in data.model_fields_set:
         if data.assignee_id is not None:
@@ -85,7 +93,10 @@ def update_task(db: Session, workspace_id: int, project_id: int, task_id: int, c
     if data.story_points is not None:
         task.story_points = data.story_points
 
-    return task_repository.update_task(db, task)
+    updated = task_repository.update_task(db, task)
+    if updated.assignee_id is not None and updated.assignee_id != old_assignee_id and updated.assignee_id != caller.user_id:
+        enqueue_assignment_notification(task_id=updated.id)
+    return updated
     
 def delete_task(db: Session, workspace_id: int, project_id: int, task_id: int, caller: WorkspaceMember) -> None:
     task = get_task(db, workspace_id, project_id, task_id)
