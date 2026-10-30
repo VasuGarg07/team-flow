@@ -4,3 +4,4 @@ from .workspace_member import WorkspaceMember, WorkspaceMemberRole
 from .project import Project
 from .task import Task, TaskStatus, TaskPriority
 from .comment import Comment
+from .attachments import Attachment, ContentType

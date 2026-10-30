@@ -12,5 +12,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int
     COOKIE_SECURE: bool
     REDIS_URL: str
+    UPLOAD_DIR: str
+    MAX_UPLOAD_BYTES: int
 
 app_settings = Settings()

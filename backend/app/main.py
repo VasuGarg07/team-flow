@@ -6,6 +6,7 @@ from app.routers.auth import router as auth_router
 from app.routers.workspaces import router as workspaces_router
 from app.routers.projects import router as projects_router
 from app.routers.tasks import router as tasks_router
+from app.routers.attachments import router as attachments_router
 
 
 app = FastAPI()
@@ -16,6 +17,7 @@ app.include_router(users_router)
 app.include_router(workspaces_router)
 app.include_router(projects_router)
 app.include_router(tasks_router)
+app.include_router(attachments_router)
 
 # Global Error Handlers
 register_error_handlers(app)
