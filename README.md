@@ -23,10 +23,11 @@ I am building it in 30 days to learn how real backends work.
 - Assigning a task queues a notification job that a separate worker runs
 - PNG, JPG and PDF attachments on tasks, with size and type checks
 - Live task events over a WebSocket for each workspace
+- Security headers, a CORS allowlist, a WebSocket origin check and an even-time login
 
 ## Coming next
 
-- Comments and security hardening
+- Comments
 - Docker Compose, automated tests, CI and deployment
 
 ## Tech used
@@ -177,6 +178,15 @@ Rules behind the table:
 - Projects and tasks are looked up through their parents: the project by workspace id and project id, and the task by project id and task id. An id from another workspace or project returns 404 (this prevents broken object level authorization).
 - The current user always comes from the token, never from the request body.
 
+## Security
+
+- **Headers:** every response has `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` and `Referrer-Policy: no-referrer`. API responses also get a strict `Content-Security-Policy` (not on `/docs`, `/redoc` and `/openapi.json`, which load scripts from a CDN). `/auth` responses are `Cache-Control: no-store`. `Strict-Transport-Security` is sent only when `COOKIE_SECURE=true`.
+- **CORS:** only the origins in `CORS_ORIGINS` (a JSON list in `.env`, for example `["http://localhost:5173"]`) may read answers from a browser, with credentials, and only the methods GET, POST, PATCH and DELETE and the headers Authorization and Content-Type. The local Vite proxy makes this unnecessary in development. CORS protects the browser user and does not stop tools like curl.
+- **WebSocket:** the connection is refused if its `Origin` is not in `CORS_ORIGINS`. Connections with no Origin (scripts) are allowed, and still need the token.
+- **Secret key:** the app will not start if `JWT_SECRET_KEY` is shorter than 32 characters.
+- **Login:** the same error message is used for a wrong email and a wrong password, and the password check also runs for unknown emails, so the response time does not show which emails exist. Registering an existing email still returns 409.
+- **Client IP:** the rate limiter uses the address of the direct connection. Behind a proxy the real address is in `X-Forwarded-For`, which anyone can fake, so it must only be trusted from a known proxy through Uvicorn's `--forwarded-allow-ips`. This will be set when the app is deployed.
+
 ## Listing tasks: filters, sorting and pages
 
 `GET /workspaces/{workspace_id}/projects/{project_id}/tasks` accepts these query parameters:
@@ -302,6 +312,7 @@ backend/
     jobs.py         the background jobs the worker runs
     storage.py      saving and deleting uploaded files
     realtime.py     WebSocket rooms and the Redis event listener
+    security_headers.py  the security headers middleware
   migrations/       Alembic database migrations
   scripts/seed.py   fills the local database with demo data
 frontend/           React, TypeScript and Vite app

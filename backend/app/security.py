@@ -44,3 +44,5 @@ def create_refresh_token(user_id: int) -> str:
 
 def decode_refresh_token(token: str) -> int:
     return read_token(token, "refresh")
+
+DUMMY_PASSWORD_HASH = hash_password("not-a-real-password")

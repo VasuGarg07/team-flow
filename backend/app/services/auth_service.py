@@ -2,16 +2,19 @@ from sqlalchemy.orm import Session
 
 from app.schemas.auth import LoginRequest, AuthTokens
 from app.repositories.user_repository import get_user_by_email, get_user_by_id
-from app.security import verify_password, create_access_token, create_refresh_token, decode_refresh_token
+from app.security import DUMMY_PASSWORD_HASH, verify_password, create_access_token, create_refresh_token, decode_refresh_token
 from app.errors import UnauthorizedError
 
 def login(db: Session, data: LoginRequest) -> AuthTokens:
     user = get_user_by_email(db, data.email.strip().lower())
-    if user is None or not verify_password(data.password, user.password_hash):
+    if user is None:
+        verify_password(data.password, DUMMY_PASSWORD_HASH)
+        raise UnauthorizedError("Invalid email or password")
+    if not verify_password(data.password, user.password_hash):
         raise UnauthorizedError("Invalid email or password")
 
     return AuthTokens(
-        access_token=create_access_token(user_id=user.id), 
+        access_token=create_access_token(user_id=user.id),
         refresh_token=create_refresh_token(user_id=user.id)
     )
 

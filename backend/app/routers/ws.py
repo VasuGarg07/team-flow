@@ -8,6 +8,7 @@ from app.errors import UnauthorizedError
 from app.repositories.workspace_repository import get_member
 from app.security import decode_access_token
 from app.realtime import connection_manager
+from app.config import app_settings
 
 
 def is_workspace_member(token: str, workspace_id: int) -> bool:
@@ -33,6 +34,13 @@ router = APIRouter(tags=["realtime"])
 
 @router.websocket("/ws/workspaces/{workspace_id}")
 async def workspace_events(websocket: WebSocket, workspace_id: int) -> None:
+    # Check Origin
+    origin = websocket.headers.get("origin")
+    if origin is not None and origin not in app_settings.CORS_ORIGINS:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    # Check Token
     await websocket.accept()
     token = await read_token_message(websocket)
     allowed = token is not None and await run_in_threadpool(is_workspace_member, token, workspace_id)

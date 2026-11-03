@@ -1,11 +1,15 @@
-from fastapi import FastAPI
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.realtime import listen_for_events
 from app.error_handlers import register_error_handlers
 from app.routers import users_router, auth_router, workspaces_router, projects_router, tasks_router, attachments_router, ws_router
+from app.security_headers import add_security_headers
+from app.config import app_settings
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -14,6 +18,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     listener_task.cancel()
 
 app = FastAPI(lifespan=lifespan)
+
+# Middlewares
+app.middleware("http")(add_security_headers)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=app_settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
 
 # Add Routers here
 app.include_router(auth_router)
