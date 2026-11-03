@@ -21,10 +21,12 @@ I am building it in 30 days to learn how real backends work.
 - The project list is cached in Redis and cleared when projects change
 - Login and register are rate limited per IP, with a Retry-After header
 - Assigning a task queues a notification job that a separate worker runs
+- PNG, JPG and PDF attachments on tasks, with size and type checks
+- Live task events over a WebSocket for each workspace
 
 ## Coming next
 
-- Comments, file attachments and live task updates
+- Comments and security hardening
 - Docker Compose, automated tests, CI and deployment
 
 ## Tech used
@@ -121,6 +123,11 @@ Open http://localhost:5173. The dev server forwards the API calls to the backend
 | POST | /workspaces/{workspace_id}/projects/{project_id}/tasks | Creates a task, and you become its reporter | Any member |
 | PATCH | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Updates a task (only the fields you send) | Owner, Admin, reporter or assignee |
 | DELETE | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id} | Deletes a task | Owner, Admin or reporter |
+| POST | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id}/attachments | Uploads one PNG, JPG or PDF (up to 5 MB) | Any member |
+| GET | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id}/attachments | Lists the task's attachments | Any member |
+| GET | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id}/attachments/{attachment_id} | Downloads one attachment | Any member |
+| DELETE | /workspaces/{workspace_id}/projects/{project_id}/tasks/{task_id}/attachments/{attachment_id} | Deletes an attachment | Owner, Admin or uploader |
+| WebSocket | /ws/workspaces/{workspace_id} | Pushes live task events (see below) | Any member |
 
 "Logged in" means an `Authorization: Bearer <access token>` header.
 
@@ -210,6 +217,29 @@ Redis is used for three things. If Redis is down the app still works, only slowe
 - **Rate limit:** `POST /auth/login` and `POST /auth/register` allow 5 requests per 60 seconds per IP. Over the limit the answer is 429 with a `Retry-After` header. It is a fixed window counter, so a burst at the window edge is possible, and if Redis is down the request is allowed.
 - **Background jobs:** when a task is created with an assignee, or updated to a different assignee (not yourself), a job `send_assignment_notification` is queued after the commit. A worker runs it with up to 3 retries. It only logs a line for now. The job gets the task id and opens its own database session.
 
+## Attachments
+
+- Only PNG, JPG and PDF files up to `MAX_UPLOAD_BYTES` (5 MB) are accepted. The type is decided from the first bytes of the file, not from the file name or the type the client sends.
+- Files are saved in the folder `UPLOAD_DIR` (ignored by git) under a random name. The name the client sent is kept only for display.
+- Downloads go through the API, so they need a login and the same workspace checks as tasks. They are sent as a download, with `nosniff`, so a browser never runs them.
+- Deleting a task removes its attachment rows, but the files stay in the upload folder until a cleanup is added.
+
+## Live task events (WebSocket)
+
+Connect to `ws://127.0.0.1:8000/ws/workspaces/{workspace_id}` and send your access token as the first message within 5 seconds:
+
+```json
+{"token": "<access token>"}
+```
+
+If the token is bad or you are not a member of that workspace, the server closes the connection with code 1008. After that, every change to a task in the workspace sends a small message:
+
+```json
+{"type": "task.updated", "project_id": 4, "task_id": 85}
+```
+
+The types are `task.created`, `task.updated` and `task.deleted`. A message holds only ids, so the client loads the task again with the normal endpoint. The task service publishes the event to Redis after the commit, and a listener in the app sends it to the sockets of that workspace, so it also works with more than one server. Messages are not stored, so a client that was offline should reload its data after it reconnects. If Redis is down, tasks still save and no event is sent.
+
 ## Demo data
 
 The seed script deletes everything in the local database and creates twelve people, three workspaces, nine projects, about eighty five tasks and some comments. Add `--bulk` for five thousand extra tasks in one project.
@@ -270,6 +300,8 @@ backend/
     cache.py        Redis cache and rate limit counter
     queue.py        the job queue
     jobs.py         the background jobs the worker runs
+    storage.py      saving and deleting uploaded files
+    realtime.py     WebSocket rooms and the Redis event listener
   migrations/       Alembic database migrations
   scripts/seed.py   fills the local database with demo data
 frontend/           React, TypeScript and Vite app

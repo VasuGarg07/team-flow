@@ -7,7 +7,7 @@ from app.errors import BadRequestError, ForbiddenError, NotFoundError
 from app.models import Task, WorkspaceMember, WorkspaceMemberRole, TaskStatus, TaskPriority
 from app.schemas.task import TaskCreate, TaskPage, TaskRead, TaskUpdate
 from app.queue import enqueue_assignment_notification
-
+from app.realtime import publish_event
 
 def ensure_workspace_member(db: Session, workspace_id: int, user_id: int) -> None:
     member = workspace_repository.get_member(db, workspace_id, user_id)
@@ -17,6 +17,8 @@ def ensure_workspace_member(db: Session, workspace_id: int, user_id: int) -> Non
 def can_change_task(caller: WorkspaceMember, task: Task) -> bool:
     return (caller.role in [WorkspaceMemberRole.ADMIN, WorkspaceMemberRole.OWNER]) or task.reporter_id == caller.user_id
 
+def publish_task_event(workspace_id: int, event_type: str, project_id: int, task_id: int) -> None:
+    publish_event(workspace_id, {"type": event_type, "project_id": project_id, "task_id": task_id})
 
 def list_tasks(
     db: Session, 
@@ -67,6 +69,8 @@ def create_task(db: Session, workspace_id: int, project_id: int, caller: Workspa
     created = task_repository.create_task(db, task)
     if created.assignee_id is not None and created.assignee_id != caller.user_id:
         enqueue_assignment_notification(task_id=created.id)
+
+    publish_task_event(workspace_id, "task.created", project_id, created.id)
     return created
 
 def update_task(db: Session, workspace_id: int, project_id: int, task_id: int, caller: WorkspaceMember, data: TaskUpdate) -> Task:
@@ -96,6 +100,8 @@ def update_task(db: Session, workspace_id: int, project_id: int, task_id: int, c
     updated = task_repository.update_task(db, task)
     if updated.assignee_id is not None and updated.assignee_id != old_assignee_id and updated.assignee_id != caller.user_id:
         enqueue_assignment_notification(task_id=updated.id)
+
+    publish_task_event(workspace_id, "task.updated", project_id, updated.id)
     return updated
     
 def delete_task(db: Session, workspace_id: int, project_id: int, task_id: int, caller: WorkspaceMember) -> None:
@@ -103,4 +109,5 @@ def delete_task(db: Session, workspace_id: int, project_id: int, task_id: int, c
     if not can_change_task(caller, task):
         raise ForbiddenError("You do not have access to do this")
     task_repository.delete_task(db, task)
+    publish_task_event(workspace_id, "task.deleted", project_id, task_id)
 
