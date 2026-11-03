@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ApiError } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
+import { errorMessage } from "@/lib/forms";
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email"),
@@ -32,7 +32,7 @@ export function LoginPage() {
       await login(values.email, values.password);
       navigate("/");
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : "Could not reach the server");
+      setServerError(errorMessage(error));
     }
   }
 

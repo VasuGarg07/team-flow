@@ -81,6 +81,10 @@ export function useRemoveMember(workspaceId: number) {
   return useMutation({
     mutationFn: (userId: number) =>
       apiRequest<unknown>(`/workspaces/${workspaceId}/members/${userId}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["members", workspaceId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members", workspaceId] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task"] });
+    },
   });
 }

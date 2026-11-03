@@ -1,4 +1,4 @@
-import type { Role, Task } from "@/api/types";
+import type { Attachment, Role, Task } from "@/api/types";
 
 export function canManageWorkspace(role: Role): boolean {
   return role === "OWNER" || role === "ADMIN";
@@ -26,4 +26,9 @@ export function canEditTask(role: Role, userId: number, task: Task): boolean {
 export function canDeleteTask(role: Role, userId: number, task: Task): boolean {
   if (canManageWorkspace(role)) return true;
   return task.reporter_id === userId;
+}
+
+export function canDeleteAttachment(role: Role, userId: number, attachment: Attachment): boolean {
+  if (canManageWorkspace(role)) return true;
+  return attachment.uploaded_by === userId;
 }

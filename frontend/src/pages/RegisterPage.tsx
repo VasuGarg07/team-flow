@@ -3,11 +3,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { ApiError } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
 import { AuthLayout } from "@/components/AuthLayout";
 import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
+import { errorMessage } from "@/lib/forms";
 
 const registerSchema = z.object({
   first_name: z.string().min(1, "Enter your first name").max(50, "Max 50 characters"),
@@ -34,7 +34,7 @@ export function RegisterPage() {
       await registerUser(values);
       navigate("/");
     } catch (error) {
-      setServerError(error instanceof ApiError ? error.message : "Could not reach the server");
+      setServerError(errorMessage(error));
     }
   }
 

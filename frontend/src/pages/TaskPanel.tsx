@@ -6,6 +6,7 @@ import type { TaskStatus } from "@/api/types";
 import { useMembers, useWorkspace } from "@/api/workspaces";
 import { useAuth } from "@/auth/AuthContext";
 import { Avatar } from "@/components/Avatar";
+import { AttachmentsSection } from "@/components/AttachmentsSection";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { ErrorBox, Loading, QueryError } from "@/components/PageState";
 import { StatusSelect } from "@/components/StatusSelect";
@@ -137,6 +138,16 @@ export function TaskPanel() {
               <Detail label="Created">{formatDateTime(data.created_at)}</Detail>
               <Detail label="Updated">{formatDateTime(data.updated_at)}</Detail>
             </dl>
+
+            {myRole !== undefined && user !== null && (
+              <AttachmentsSection
+                workspaceId={workspaceId}
+                projectId={projectId}
+                taskId={taskId}
+                role={myRole}
+                userId={user.id}
+              />
+            )}
 
             {(canEdit || canDelete) && (
               <div className="flex gap-2">

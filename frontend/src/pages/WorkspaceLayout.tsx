@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { errorMessage, showServerError } from "@/lib/forms";
+import { useWorkspaceEvents } from "@/lib/useWorkspaceEvents";
 import { useNumericParam } from "@/lib/params";
 import { canDeleteWorkspace, canManageWorkspace } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -73,6 +74,7 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
 export function WorkspaceLayout() {
   const workspaceId = useNumericParam("workspaceId");
   const workspace = useWorkspace(workspaceId);
+  useWorkspaceEvents(workspaceId);
   const deleteWorkspace = useDeleteWorkspace(workspaceId);
   const navigate = useNavigate();
   const [renameOpen, setRenameOpen] = useState(false);

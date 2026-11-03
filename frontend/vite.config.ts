@@ -15,6 +15,7 @@ export default defineConfig({
       "/users": backendUrl,
       "/workspaces": backendUrl,
       "/health": backendUrl,
+      "/ws": { target: backendUrl, ws: true },
     },
   },
 });

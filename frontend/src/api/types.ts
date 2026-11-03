@@ -32,6 +32,17 @@ export type Project = {
   updated_at: string;
 };
 
+export type ContentType = "PDF" | "JPEG" | "PNG";
+
+export type Attachment = {
+  id: number;
+  original_name: string;
+  content_type: ContentType;
+  size_bytes: number;
+  uploaded_by: number;
+  created_at: string;
+};
+
 export type Task = {
   id: number;
   project_id: number;

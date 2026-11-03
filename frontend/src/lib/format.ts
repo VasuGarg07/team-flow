@@ -28,6 +28,12 @@ export function daysOverdue(isoDate: string): number {
   return Math.max(1, Math.floor(difference / millisecondsPerDay));
 }
 
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function toDateTimeInput(isoDate: string | null): string {
   return isoDate === null ? "" : isoDate.slice(0, 16);
 }
