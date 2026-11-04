@@ -7,6 +7,7 @@ class Settings(BaseSettings):
 
     PORT: int
     DATABASE_URL: str
+    TEST_DATABASE_URL: str | None = None
     JWT_SECRET_KEY: str = Field(min_length=32)
     JWT_ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int

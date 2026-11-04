@@ -299,31 +299,51 @@ Run the unit tests from the backend folder. They need no database or Redis:
 uv run pytest
 ​```
 
-They cover password hashing and tokens, the file type and size checks, the task permission rule, the input validation rules, the rate limit counter (with a fake Redis) and the workspace role rules (with a fake repository). Tests for the database and the HTTP endpoints come with the API tests.
+They cover password hashing and tokens, the file type and size checks, the task permission rule, the input validation rules, the rate limit counter (with a fake Redis) and the workspace role rules (with a fake repository).
+
+### API tests
+
+The API tests call the whole app through FastAPI's TestClient and use a real Postgres database, so they need Postgres running. They never touch Redis, the job queue or the upload folder: Redis is an in-memory fake, enqueued jobs are only recorded, and uploads go to a temporary folder.
+
+One-time setup: create a separate database and add its URL to `.env` (see `.env.example`):
+
+```
+docker exec -it teamflow-db psql -U <user> -d <db_name> -c "CREATE DATABASE teamflow_test;"
+```
+
+```
+uv run pytest tests/api
+uv run pytest --ignore=tests/api
+```
+
+The first command runs the API tests, the second runs only the unit tests, which need no database. The API tests refuse to run if `TEST_DATABASE_URL` is missing, equals `DATABASE_URL`, or does not end in `_test`. Every table is emptied after each test. They cover auth, workspaces and roles, projects (including the cross-workspace 404 and cache clearing) and tasks (permissions, queued jobs, live events, pagination).
 
 ## Folder layout
 
 ```
 backend/
-  app/
-    routers/        the URLs, and the thin handling of each request
-    services/       the business rules
-    repositories/   database queries
-    schemas/        Pydantic classes for what comes in and what goes out
-    models/         SQLAlchemy classes, one per database table
-    dependencies.py shared checks, like the signed-in user and the workspace role
-    security.py     password hashing and tokens
-    errors.py       app errors
-    error_handlers.py  the one JSON error format
-    config.py       settings from .env
-    database.py     the database connection
-    cache.py        Redis cache and rate limit counter
-    queue.py        the job queue
-    jobs.py         the background jobs the worker runs
-    storage.py      saving and deleting uploaded files
-    realtime.py     WebSocket rooms and the Redis event listener
-    security_headers.py  the security headers middleware
-  migrations/       Alembic database migrations
-  scripts/seed.py   fills the local database with demo data
+   app/
+      routers/        the URLs, and the thin handling of each request
+      services/       the business rules
+      repositories/   database queries
+      schemas/        Pydantic classes for what comes in and what goes out
+      models/         SQLAlchemy classes, one per database table
+      dependencies.py shared checks, like the signed-in user and the workspace role
+      security.py     password hashing and tokens
+      errors.py       app errors
+      error_handlers.py  the one JSON error format
+      config.py       settings from .env
+      database.py     the database connection
+      cache.py        Redis cache and rate limit counter
+      queue.py        the job queue
+      jobs.py         the background jobs the worker runs
+      storage.py      saving and deleting uploaded files
+      realtime.py     WebSocket rooms and the Redis event listener
+      security_headers.py  the security headers middleware
+   migrations/       Alembic database migrations
+   scripts/seed.py   fills the local database with demo data
+   tests/            unit tests (pytest)
+   tests/api/        API tests with a real test database
+   tests/fakes.py    the in-memory Redis used by the tests
 frontend/           React, TypeScript and Vite app
 ```
