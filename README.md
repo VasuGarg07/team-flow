@@ -291,6 +291,16 @@ Right now refresh tokens are stateless JWTs, so logout only removes the cookie. 
 3. The **repository** is the only place that talks to the database.
 4. The **error handlers** turn any app error into the one JSON error format.
 
+## Tests
+
+Run the unit tests from the backend folder. They need no database or Redis:
+
+​```
+uv run pytest
+​```
+
+They cover password hashing and tokens, the file type and size checks, the task permission rule, the input validation rules, the rate limit counter (with a fake Redis) and the workspace role rules (with a fake repository). Tests for the database and the HTTP endpoints come with the API tests.
+
 ## Folder layout
 
 ```

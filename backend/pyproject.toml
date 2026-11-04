@@ -15,3 +15,12 @@ dependencies = [
     "rq>=3.0.0",
     "sqlalchemy>=2.1.5",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
