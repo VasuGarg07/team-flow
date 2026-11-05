@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from fastapi import WebSocket
 from redis import RedisError
@@ -7,6 +8,8 @@ from redis.asyncio import Redis as AsyncRedis
 
 from app.cache import redis_client
 from app.config import app_settings
+
+logger = logging.getLogger(__name__)
 
 
 class ConnectionManager:
@@ -50,8 +53,8 @@ def publish_event(workspace_id: int, event: dict[str, object]) -> None:
 
 async def listen_for_events() -> None:
     while True:
+        client = AsyncRedis.from_url(app_settings.REDIS_URL, decode_responses=True)
         try:
-            client = AsyncRedis.from_url(app_settings.REDIS_URL, decode_responses=True)
             pubsub = client.pubsub()
             await pubsub.psubscribe("events:workspace:*")
             async for message in pubsub.listen():
@@ -60,4 +63,10 @@ async def listen_for_events() -> None:
                 workspace_id = int(message["channel"].split(":")[-1])
                 await connection_manager.broadcast(workspace_id, message["data"])
         except RedisError:
+            logger.warning("Event listener lost Redis, retrying in 5 seconds")
             await asyncio.sleep(5)
+        except Exception:
+            logger.exception("Event listener failed, retrying in 5 seconds")
+            await asyncio.sleep(5)
+        finally:
+            await client.aclose()

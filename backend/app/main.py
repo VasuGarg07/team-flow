@@ -1,6 +1,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,13 +12,25 @@ from app.security_headers import add_security_headers
 from app.config import app_settings
 from app.logging_config import setup_logging
 from app.request_logging import log_requests
+from app.cache import redis_client
+from app.database import engine
+from app.queue import queue_connection
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    logger.info("App starting")
     listener_task = asyncio.create_task(listen_for_events())
     yield
+    logger.info("App shutting down")
     listener_task.cancel()
+    await asyncio.gather(listener_task, return_exceptions=True)
+    redis_client.close()
+    queue_connection.close()
+    engine.dispose()
+    logger.info("App stopped")
 
 setup_logging()
 app = FastAPI(lifespan=lifespan)

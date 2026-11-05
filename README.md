@@ -291,6 +291,20 @@ Right now refresh tokens are stateless JWTs, so logout only removes the cookie. 
 3. The **repository** is the only place that talks to the database.
 4. The **error handlers** turn any app error into the one JSON error format.
 
+## Shutdown
+
+To stop the server cleanly, run it without reload and give slow requests a time limit:
+
+```
+uv run uvicorn app.main:app --timeout-graceful-shutdown 10
+```
+
+On Ctrl+C (SIGINT) or SIGTERM, Uvicorn stops accepting new connections and waits up to 10 seconds for requests in progress. Then the app cancels the live event listener and waits for it, closes both Redis clients and closes the database connection pool. The start and stop are written to the logs.
+
+The worker stops itself the same way: the first Ctrl+C lets the current job finish, a second one kills it. A job killed halfway is retried, so jobs must be safe to run twice.
+
+If the live event listener hits an unexpected error, it logs the error, waits 5 seconds and reconnects.
+
 ## Logging and request IDs
 
 Every request gets an ID. The middleware reuses the `X-Request-ID` header if the caller sent one (up to 64 characters), otherwise it makes a random one. The ID is sent back in the `X-Request-ID` response header and is added to every log line written while that request is handled.
