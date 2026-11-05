@@ -246,7 +246,7 @@ STORY_POINTS = [1, 2, 3, 5, 8, 13]
 
 def database_is_local() -> bool:
     host = make_url(app_settings.DATABASE_URL).host
-    return host in ("localhost", "127.0.0.1")
+    return host in ("localhost", "127.0.0.1", "db")
 
 
 def truncate_all_tables(db: Session) -> None:

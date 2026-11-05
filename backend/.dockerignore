@@ -1,0 +1,7 @@
+.venv
+.venv-wsl
+.env
+.pytest_cache
+__pycache__
+uploads
+tests

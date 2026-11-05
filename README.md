@@ -94,6 +94,50 @@ npm run dev
 
 Open http://localhost:5173. The dev server forwards the API calls to the backend on port 8000, so no CORS setup is needed.
 
+## Run everything with Docker
+
+One command starts Postgres, Redis, the database migration, the API, the worker and the frontend. Run these in a shell where Docker works (WSL for me), from the project root:
+
+1. Copy `.env.example` (in the project root, not the one in `backend`) to `.env` and fill in the values. This file only feeds Docker Compose. Make the secret with:
+   ```
+   python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+   ```
+2. Stop `fastapi dev` if it is running, because both use port 8000.
+3. Start everything:
+   ```
+   docker compose up -d --build
+   ```
+4. Optional: fill the database with demo data:
+   ```
+   docker compose run --rm api python -m scripts.seed --yes
+   ```
+5. Open http://localhost:8080 for the app, or http://localhost:8000/docs for the API docs.
+
+What runs:
+
+| Service | What it is |
+|---|---|
+| db | Postgres 16, data in the `pgdata` volume, not reachable from outside Docker |
+| redis | Redis 7, not reachable from outside Docker |
+| migrate | Runs `alembic upgrade head` once and exits. The API and worker wait for it |
+| api | The FastAPI app, run by Uvicorn as a normal user, with a health check |
+| worker | The RQ worker, same image as the API |
+| frontend | nginx. It serves the built React app and forwards the API and WebSocket calls to the API, so the browser sees one address |
+
+Useful commands:
+
+```
+docker compose ps
+docker compose logs -f api
+docker compose stop
+docker compose down
+docker compose down -v
+```
+
+`down` removes the containers and keeps the data. `down -v` also deletes the database and the uploaded files. After a code change, run `docker compose up -d --build` again, because the code is copied into the image when it is built.
+
+The seed script only runs against `localhost`, `127.0.0.1` or `db`, so it cannot wipe a remote database.
+
 ## Endpoints so far
 
 | Method | Path | What it does | Who can use it |
@@ -369,5 +413,9 @@ backend/
    tests/            unit tests (pytest)
    tests/api/        API tests with a real test database
    tests/fakes.py    the in-memory Redis used by the tests
+   Dockerfile        builds the API and worker image
 frontend/           React, TypeScript and Vite app
+   Dockerfile        builds the app and serves it with nginx
+   nginx.conf        serves the files and forwards API and WebSocket calls
+docker-compose.yml  starts the whole system with one command
 ```
