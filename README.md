@@ -1,5 +1,7 @@
 # TeamFlow
 
+[![CI](https://github.com/VasuGarg07/team-flow/actions/workflows/ci.yml/badge.svg)](https://github.com/VasuGarg07/team-flow/actions/workflows/ci.yml)
+
 TeamFlow is a backend for a team task app, like a small Jira or Trello. People can sign up, log in, make workspaces, add projects, and track tasks with their team.
 
 I am building it in 30 days to learn how real backends work.
@@ -357,6 +359,18 @@ Logs are one JSON object per line. Each request logs one line with the method, p
 
 To follow one request, copy its `X-Request-ID` from the response and search for it in the server output.
 
+## CI
+
+GitHub Actions runs the workflow in `.github/workflows/ci.yml` on every push to `main` and on every pull request. It has three jobs, each on a fresh Linux machine:
+
+| Job | What it does |
+|---|---|
+| backend | Installs the packages exactly as locked (`uv sync --frozen`) and runs all unit and API tests against a Postgres service container |
+| frontend | Installs with `npm ci` and runs `npm run build`, which checks the TypeScript types and builds the app |
+| docker | Builds the backend and frontend images. It starts only after the other two passed |
+
+The settings the app needs are given as environment variables in the workflow. The JWT key there is a dummy value used only inside CI. Real secrets must go into GitHub Secrets, never into the workflow file. The tests need no Redis, because the API tests use the in-memory fake. The images are built but not pushed anywhere yet.
+
 ## Tests
 
 Run the unit tests from the backend folder. They need no database or Redis:
@@ -418,4 +432,5 @@ frontend/           React, TypeScript and Vite app
    Dockerfile        builds the app and serves it with nginx
    nginx.conf        serves the files and forwards API and WebSocket calls
 docker-compose.yml  starts the whole system with one command
+.github/workflows/  the CI workflow
 ```
