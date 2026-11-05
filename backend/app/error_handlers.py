@@ -46,7 +46,10 @@ def register_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
-        logger.exception("Unexpected error")
+        logger.exception(
+            "Unexpected error",
+            extra={"method": request.method, "path": request.url.path},
+        )
         return JSONResponse(
             status_code=500,
             content=build_error_body("INTERNAL_ERROR", "Something went wrong"),

@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
@@ -7,7 +9,9 @@ from app.models import Project
 from app.errors import NotFoundError
 from app.cache import read_cache, write_cache, delete_cache, projects_cache_key
 
+logger = logging.getLogger(__name__)
 adapter = TypeAdapter(list[ProjectRead])
+
 
 def create_project(db: Session, workspace_id: int, data: ProjectCreate) -> Project:
     project = Project(name=data.name, description=data.description)
@@ -23,9 +27,11 @@ def list_projects(db: Session, workspace_id: int) -> list[ProjectRead]:
     text = read_cache(key)
 
     if text is not None:
+        logger.info("projects cache hit for workspace %s", workspace_id)
         data = adapter.validate_json(text)
         return data
 
+    logger.info("projects cache miss for workspace %s", workspace_id)
     projects = project_repository.list_projects(db, workspace_id)
     project_reads = [ProjectRead.model_validate(project) for project in projects]
     projects_text = adapter.dump_json(project_reads).decode()

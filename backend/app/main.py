@@ -9,6 +9,8 @@ from app.error_handlers import register_error_handlers
 from app.routers import users_router, auth_router, workspaces_router, projects_router, tasks_router, attachments_router, ws_router
 from app.security_headers import add_security_headers
 from app.config import app_settings
+from app.logging_config import setup_logging
+from app.request_logging import log_requests
 
 
 @asynccontextmanager
@@ -17,6 +19,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
     listener_task.cancel()
 
+setup_logging()
 app = FastAPI(lifespan=lifespan)
 
 # Middlewares
@@ -28,7 +31,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
-
+app.middleware("http")(log_requests)
 
 # Add Routers here
 app.include_router(auth_router)

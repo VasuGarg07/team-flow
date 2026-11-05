@@ -291,6 +291,14 @@ Right now refresh tokens are stateless JWTs, so logout only removes the cookie. 
 3. The **repository** is the only place that talks to the database.
 4. The **error handlers** turn any app error into the one JSON error format.
 
+## Logging and request IDs
+
+Every request gets an ID. The middleware reuses the `X-Request-ID` header if the caller sent one (up to 64 characters), otherwise it makes a random one. The ID is sent back in the `X-Request-ID` response header and is added to every log line written while that request is handled.
+
+Logs are one JSON object per line. Each request logs one line with the method, path (no query string), status code and duration in milliseconds. It is logged as WARNING for 4xx and 5xx and INFO otherwise. Only a fixed list of fields is ever logged, so passwords, tokens, cookies and request bodies never appear.
+
+To follow one request, copy its `X-Request-ID` from the response and search for it in the server output.
+
 ## Tests
 
 Run the unit tests from the backend folder. They need no database or Redis:
@@ -340,6 +348,8 @@ backend/
       storage.py      saving and deleting uploaded files
       realtime.py     WebSocket rooms and the Redis event listener
       security_headers.py  the security headers middleware
+      logging_config.py    JSON log format and the request ID variable
+      request_logging.py   middleware that sets the request ID and logs each request
    migrations/       Alembic database migrations
    scripts/seed.py   fills the local database with demo data
    tests/            unit tests (pytest)
