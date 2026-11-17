@@ -19,44 +19,43 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="flex h-14 items-center justify-between gap-4 border-b px-6">
-        <div className="flex items-center gap-4">
-          <Link to="/app">
-            <Logo />
-          </Link>
-          <div className="relative">
-            <Layers
-              size={14}
-              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Select
-              aria-label="Switch workspace"
-              className="w-52 pl-8"
-              value={workspaceId ?? ""}
-              onChange={(event) => navigate(`/app/${event.target.value}`)}
-            >
-              <option value="" disabled>
-                Switch workspace
-              </option>
-              {workspaces.data?.map((workspace) => (
-                <option key={workspace.id} value={workspace.id}>
-                  {workspace.name}
-                </option>
-              ))}
-            </Select>
+      <header className="border-b">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-6">
+          <div className="flex items-center gap-4">
+            <Link to="/app">
+              <Logo />
+            </Link>
+            <div className="relative">
+              <Layers
+                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Select
+                aria-label="Switch workspace"
+                className="w-52 pl-8"
+                value={workspaceId ?? ""}
+                onChange={(event) => navigate(event.target.value === "" ? "/app" : `/app/${event.target.value}`)}
+              >
+                <option value="">{workspaces.isPending ? "Loading" : "All workspaces"}</option>
+                {workspaces.data?.map((workspace) => (
+                  <option key={workspace.id} value={workspace.id}>
+                    {workspace.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Avatar user={user} className="h-7 w-7 text-xs" />
+            <span className="hidden text-sm sm:inline">
+              {user.first_name} {user.last_name}
+            </span>
+            <Button variant="ghost" size="icon" onClick={logout} aria-label="Sign out">
+              <LogOut />
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Avatar user={user} className="h-7 w-7 text-xs" />
-          <span className="hidden text-sm sm:inline">
-            {user.first_name} {user.last_name}
-          </span>
-          <Button variant="ghost" size="icon" onClick={logout} aria-label="Sign out">
-            <LogOut size={16} />
-          </Button>
-        </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-6 py-8">
         <Outlet />
       </main>
     </div>

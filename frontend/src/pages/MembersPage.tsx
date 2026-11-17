@@ -70,7 +70,7 @@ function AddMemberForm({ workspaceId, myRole }: { workspaceId: number; myRole: R
           {myRole === "OWNER" && <option value="ADMIN">Admin</option>}
         </Select>
         <Button type="submit" variant="brand" disabled={addMember.isPending}>
-          <UserPlus size={16} />
+          <UserPlus />
           Add member
         </Button>
       </form>
@@ -113,7 +113,7 @@ export function MembersPage() {
 
   return (
     <div className="grid gap-4">
-      <h2 className="text-lg font-semibold tracking-tight">Members</h2>
+      <h2 className="text-lg font-medium">Members</h2>
 
       {myRole !== undefined && canManageWorkspace(myRole) && (
         <AddMemberForm workspaceId={workspaceId} myRole={myRole} />
@@ -161,7 +161,7 @@ export function MembersPage() {
                       setRemoving(member);
                     }}
                   >
-                    <UserMinus size={16} />
+                    <UserMinus />
                   </Button>
                 )}
               </div>

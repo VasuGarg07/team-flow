@@ -6,7 +6,7 @@ import { errorMessage } from "@/lib/forms";
 export function Loading() {
   return (
     <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-      <Loader2 size={16} className="animate-spin" />
+      <Loader2 className="animate-spin" />
       Loading
     </div>
   );
@@ -42,7 +42,7 @@ export function ErrorBox({ message }: { message: string }) {
       role="alert"
       className="flex items-start gap-2 rounded-md bg-destructive-subtle px-3 py-2 text-sm text-destructive"
     >
-      <AlertCircle size={16} className="mt-0.5 shrink-0" />
+      <AlertCircle className="mt-0.5 shrink-0" />
       {message}
     </p>
   );

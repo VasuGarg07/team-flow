@@ -53,16 +53,17 @@ const defaultFilters: TaskFilters = {
 
 type SortHeaderProps = {
   label: string;
+  className?: string;
   field: SortField;
   filters: TaskFilters;
   onSort: (field: SortField) => void;
 };
 
-function SortHeader({ label, field, filters, onSort }: SortHeaderProps) {
+function SortHeader({ label, className, field, filters, onSort }: SortHeaderProps) {
   const active = filters.sortBy === field;
   const Icon = !active ? ArrowUpDown : filters.order === "asc" ? ArrowUp : ArrowDown;
   return (
-    <th className="px-4 py-2 font-medium">
+    <th className={cn("px-4 py-2 font-medium", className)}>
       <button
         type="button"
         onClick={() => onSort(field)}
@@ -173,13 +174,13 @@ export function TasksPage() {
             to={`/app/${workspaceId}`}
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft size={14} />
+            <ArrowLeft />
             Back to projects
           </Link>
-          <h2 className="text-lg font-semibold tracking-tight">{project.data?.name ?? "Project"}</h2>
+          <h2 className="text-lg font-medium">{project.data?.name ?? "Project"}</h2>
         </div>
         <Button variant="brand" onClick={openCreate} disabled={!membersLoaded}>
-          <Plus size={16} />
+          <Plus />
           New task
           <kbd className="rounded bg-brand-foreground/20 px-1 text-[10px]">C</kbd>
         </Button>
@@ -234,7 +235,7 @@ export function TasksPage() {
           </Select>
           {hasFilters && (
             <Button variant="ghost" onClick={() => setFilters(defaultFilters)}>
-              <X size={14} />
+              <X />
               Clear
             </Button>
           )}
@@ -253,7 +254,7 @@ export function TasksPage() {
       )}
       {tasks.data !== undefined && tasks.data.items.length > 0 && myRole !== undefined && user !== null && (
         <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm tabular-nums">
             <thead className="border-b bg-muted text-left text-xs text-muted-foreground">
               <tr>
                 <SortHeader label="Task" field="name" filters={filters} onSort={sortBy} />
@@ -261,8 +262,8 @@ export function TasksPage() {
                 <SortHeader label="Status" field="status" filters={filters} onSort={sortBy} />
                 <th className="px-4 py-2 font-medium">Assignee</th>
                 <SortHeader label="Due" field="due_date" filters={filters} onSort={sortBy} />
-                <SortHeader label="Pts" field="story_points" filters={filters} onSort={sortBy} />
-                <SortHeader label="Created" field="created_at" filters={filters} onSort={sortBy} />
+                <SortHeader label="Pts" className="hidden md:table-cell" field="story_points" filters={filters} onSort={sortBy} />
+                <SortHeader label="Created" className="hidden lg:table-cell" field="created_at" filters={filters} onSort={sortBy} />
                 <th className="px-4 py-2" />
               </tr>
             </thead>
@@ -277,7 +278,7 @@ export function TasksPage() {
                   <tr
                     key={task.id}
                     onClick={() => navigate(`${tasksUrl}/tasks/${task.id}`)}
-                    className="cursor-pointer hover:bg-muted/60"
+                    className="cursor-pointer transition-colors hover:bg-muted/60"
                   >
                     <td className={cn("max-w-xs border-l-[3px] px-4 py-3", priorityEdge[task.priority])}>
                       <Link
@@ -301,7 +302,7 @@ export function TasksPage() {
                     <td className="whitespace-nowrap px-4 py-3">
                       {task.assignee === null ? (
                         <span className="flex items-center gap-1.5 text-muted-foreground">
-                          <UserRound size={14} />
+                          <UserRound />
                           Unassigned
                         </span>
                       ) : (
@@ -318,13 +319,13 @@ export function TasksPage() {
                       )}
                     >
                       <span className="flex items-center gap-1.5">
-                        <CalendarDays size={14} />
+                        <CalendarDays />
                         {task.due_date === null ? "None" : formatDate(task.due_date)}
                         {overdueDays > 0 && <span className="text-xs">· {overdueDays}d overdue</span>}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{task.story_points}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
+                    <td className="hidden px-4 py-3 md:table-cell">{task.story_points}</td>
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-muted-foreground lg:table-cell">
                       {formatDate(task.created_at)}
                     </td>
                     <td
@@ -333,7 +334,7 @@ export function TasksPage() {
                     >
                       {editable && (
                         <Button variant="ghost" size="icon" aria-label="Edit task" onClick={() => openEdit(task)}>
-                          <Pencil size={16} />
+                          <Pencil />
                         </Button>
                       )}
                       {canDeleteTask(myRole, user.id, task) && (
@@ -346,7 +347,7 @@ export function TasksPage() {
                             setDeleting(task);
                           }}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 />
                         </Button>
                       )}
                     </td>
@@ -359,7 +360,7 @@ export function TasksPage() {
       )}
 
       {tasks.data !== undefined && tasks.data.total > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between text-sm text-muted-foreground tabular-nums">
           <span>
             {tasks.data.total} tasks · Page {filters.page} of {totalPages}
           </span>
@@ -369,7 +370,7 @@ export function TasksPage() {
               disabled={filters.page <= 1}
               onClick={() => setFilters({ ...filters, page: filters.page - 1 })}
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft />
               Previous
             </Button>
             <Button
@@ -378,7 +379,7 @@ export function TasksPage() {
               onClick={() => setFilters({ ...filters, page: filters.page + 1 })}
             >
               Next
-              <ChevronRight size={16} />
+              <ChevronRight />
             </Button>
           </div>
         </div>

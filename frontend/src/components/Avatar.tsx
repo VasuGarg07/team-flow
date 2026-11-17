@@ -7,7 +7,7 @@ export function Avatar({ user, className }: { user: User; className?: string }) 
     <span
       title={`${user.first_name} ${user.last_name}`}
       className={cn(
-        "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand-subtle text-[10px] font-semibold text-brand",
+        "grid h-6 w-6 shrink-0 place-items-center rounded-full bg-accent text-[10px] font-medium text-muted-foreground",
         className,
       )}
     >

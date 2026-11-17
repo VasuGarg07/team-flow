@@ -95,15 +95,15 @@ export function TaskPanel() {
     data !== undefined && myRole !== undefined && user !== null && canDeleteTask(myRole, user.id, data);
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-foreground/30" onClick={() => navigate(closeUrl)}>
+    <div className="fixed inset-0 z-40 flex animate-fade-in justify-end bg-foreground/30" onClick={() => navigate(closeUrl)}>
       <aside
         onClick={(event) => event.stopPropagation()}
-        className="h-full w-full max-w-md overflow-y-auto border-l bg-card p-6 shadow-lg"
+        className="h-full w-full max-w-md animate-slide-in overflow-y-auto border-l bg-card p-6 shadow-lg"
       >
         <div className="mb-4 flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Task details</span>
           <Button variant="ghost" size="icon" aria-label="Close panel" onClick={() => navigate(closeUrl)}>
-            <X size={16} />
+            <X />
           </Button>
         </div>
 
@@ -112,7 +112,7 @@ export function TaskPanel() {
         {data !== undefined && (
           <div className="grid gap-6">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight">{data.name}</h2>
+              <h2 className="text-xl font-medium">{data.name}</h2>
               <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">
                 {data.description ?? "No description."}
               </p>
@@ -120,7 +120,7 @@ export function TaskPanel() {
 
             {actionError !== null && !deleteOpen && <ErrorBox message={actionError} />}
 
-            <dl className="grid gap-3">
+            <dl className="grid gap-3 tabular-nums">
               <Detail label="Status">
                 <StatusSelect status={data.status} canEdit={canEdit} onChange={changeStatus} />
               </Detail>
@@ -153,7 +153,7 @@ export function TaskPanel() {
               <div className="flex gap-2">
                 {canEdit && (
                   <Button variant="outline" onClick={() => setEditOpen(true)} disabled={members.data === undefined}>
-                    <Pencil size={14} />
+                    <Pencil />
                     Edit
                   </Button>
                 )}
@@ -165,7 +165,7 @@ export function TaskPanel() {
                       setDeleteOpen(true);
                     }}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 />
                     Delete
                   </Button>
                 )}

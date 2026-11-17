@@ -9,6 +9,7 @@ import type { Project } from "@/api/types";
 import { useWorkspace } from "@/api/workspaces";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Field } from "@/components/Field";
+import { Monogram } from "@/components/Monogram";
 import { EmptyState, ErrorBox, Loading, QueryError } from "@/components/PageState";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -127,10 +128,10 @@ export function ProjectsPage() {
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
+        <h2 className="text-lg font-medium">Projects</h2>
         {canManage && (
           <Button variant="brand" onClick={openCreate}>
-            <Plus size={16} />
+            <Plus />
             New project
           </Button>
         )}
@@ -153,24 +154,22 @@ export function ProjectsPage() {
                 to={`/app/${workspaceId}/projects/${project.id}`}
                 className="flex min-w-0 flex-1 items-center gap-3"
               >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
-                  <FolderKanban size={18} />
-                </div>
+                <Monogram name={project.name} />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{project.name}</p>
                   {project.description !== null && (
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">{project.description}</p>
                   )}
                 </div>
-                <ChevronRight size={16} className="text-muted-foreground" />
+                <ChevronRight className="text-muted-foreground" />
               </Link>
               {canManage && (
                 <div className="flex gap-1">
                   <Button variant="ghost" size="icon" aria-label="Edit project" onClick={() => openEdit(project)}>
-                    <Pencil size={16} />
+                    <Pencil />
                   </Button>
                   <Button variant="ghost" size="icon" aria-label="Delete project" onClick={() => openDelete(project)}>
-                    <Trash2 size={16} />
+                    <Trash2 />
                   </Button>
                 </div>
               )}

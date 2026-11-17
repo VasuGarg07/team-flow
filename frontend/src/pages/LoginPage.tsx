@@ -39,7 +39,7 @@ export function LoginPage() {
   return (
     <AuthLayout>
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Welcome back</h1>
+        <h1 className="text-xl font-medium">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">Sign in to your workspace.</p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>

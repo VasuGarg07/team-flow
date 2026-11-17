@@ -41,8 +41,8 @@ export function RegisterPage() {
   return (
     <AuthLayout>
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Create your account</h1>
-        <p className="mt-1 text-sm text-muted-foreground">It takes less than a minute.</p>
+        <h1 className="text-xl font-medium">Create your account</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Teammates add you to their workspaces by email.</p>
       </div>
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
         <div className="grid grid-cols-2 gap-3">

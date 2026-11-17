@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/api";
 import type { SortField, Task, TaskPage, TaskPriority, TaskStatus } from "@/api/types";
 
@@ -45,11 +45,22 @@ export function useTasks(workspaceId: number, projectId: number, filters: TaskFi
   });
 }
 
+function findCachedTask(queryClient: QueryClient, projectId: number, taskId: number): Task | undefined {
+  const cachedPages = queryClient.getQueriesData<TaskPage>({ queryKey: ["tasks", projectId] });
+  for (const [, page] of cachedPages) {
+    const found = page?.items.find((task) => task.id === taskId);
+    if (found !== undefined) return found;
+  }
+  return undefined;
+}
+
 export function useTask(workspaceId: number, projectId: number, taskId: number) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: ["task", taskId],
     queryFn: () =>
       apiRequest<Task>(`/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`),
+    placeholderData: () => findCachedTask(queryClient, projectId, taskId),
   });
 }
 

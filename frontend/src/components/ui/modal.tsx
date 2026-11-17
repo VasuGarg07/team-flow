@@ -24,14 +24,14 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="m-auto w-full max-w-md rounded-lg border bg-card p-6 text-foreground shadow-lg backdrop:bg-foreground/40"
+      className="m-auto w-full max-w-md animate-rise-in rounded-lg border bg-card p-6 text-foreground shadow-lg backdrop:animate-fade-in backdrop:bg-foreground/40"
     >
       {open && (
         <div className="grid gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+            <h2 className="text-lg font-medium">{title}</h2>
             <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
-              <X size={16} />
+              <X />
             </Button>
           </div>
           {children}

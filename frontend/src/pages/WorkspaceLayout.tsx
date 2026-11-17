@@ -110,19 +110,19 @@ export function WorkspaceLayout() {
     <div className="grid gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight">{name}</h1>
+          <h1 className="text-2xl font-medium tracking-tight">{name}</h1>
           <RoleBadge role={role} />
         </div>
         <div className="flex gap-2">
           {canManageWorkspace(role) && (
             <Button variant="outline" onClick={() => setRenameOpen(true)}>
-              <Pencil size={14} />
+              <Pencil />
               Rename
             </Button>
           )}
           {canDeleteWorkspace(role) && (
             <Button variant="outline" onClick={() => setDeleteOpen(true)}>
-              <Trash2 size={14} />
+              <Trash2 />
               Delete
             </Button>
           )}
@@ -131,11 +131,11 @@ export function WorkspaceLayout() {
 
       <nav className="flex gap-5 border-b">
         <NavLink to={`/app/${workspaceId}`} end className={tabClass}>
-          <FolderKanban size={14} />
+          <FolderKanban />
           Projects
         </NavLink>
         <NavLink to={`/app/${workspaceId}/members`} className={tabClass}>
-          <Users size={14} />
+          <Users />
           Members
         </NavLink>
       </nav>

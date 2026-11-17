@@ -18,11 +18,11 @@ export const statusStyles: Record<TaskStatus, string> = {
 };
 
 const priorityStyles: Record<TaskPriority, string> = {
-  LIVE_ISSUE: "bg-priority-live-issue-subtle text-priority-live-issue",
-  BLOCKER: "bg-priority-blocker-subtle text-priority-blocker",
-  HIGH: "bg-priority-high-subtle text-priority-high",
-  MEDIUM: "bg-priority-medium-subtle text-priority-medium",
-  LOW: "bg-priority-low-subtle text-priority-low",
+  LIVE_ISSUE: "px-0 text-priority-live-issue",
+  BLOCKER: "px-0 text-priority-blocker",
+  HIGH: "px-0 text-priority-high",
+  MEDIUM: "px-0 text-priority-medium",
+  LOW: "px-0 text-priority-low",
 };
 
 export const priorityEdge: Record<TaskPriority, string> = {

@@ -9,7 +9,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <Logo />
         </div>
         <div>
-          <h2 className="max-w-[14ch] text-3xl font-semibold leading-tight tracking-tight">
+          <h2 className="max-w-[14ch] text-3xl font-medium leading-tight tracking-tight">
             Ship the work, not the status meetings.
           </h2>
           <p className="mt-3 max-w-[34ch] text-sm text-background/60">

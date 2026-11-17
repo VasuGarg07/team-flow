@@ -9,7 +9,7 @@ import {
   useUploadAttachment,
 } from "@/api/attachments";
 import type { Attachment, Role } from "@/api/types";
-import { ErrorBox, Loading, QueryError } from "@/components/PageState";
+import { ErrorBox, QueryError } from "@/components/PageState";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/lib/forms";
 import { formatBytes } from "@/lib/format";
@@ -71,8 +71,8 @@ export function AttachmentsSection({ workspaceId, projectId, taskId, role, userI
   return (
     <section className="grid gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-          <Paperclip size={14} />
+        <h3 className="flex items-center gap-1.5 text-sm font-medium">
+          <Paperclip />
           Attachments
         </h3>
         <Button variant="outline" onClick={() => fileInput.current?.click()} disabled={uploadAttachment.isPending}>
@@ -90,7 +90,7 @@ export function AttachmentsSection({ workspaceId, projectId, taskId, role, userI
       <p className="text-xs text-muted-foreground">PNG, JPG or PDF, up to 5 MB.</p>
 
       {error !== null && <ErrorBox message={error} />}
-      {attachments.isPending && <Loading />}
+      {attachments.isPending && <div className="h-11 rounded-md bg-muted" />}
       {attachments.isError && <QueryError error={attachments.error} />}
       {attachments.data?.length === 0 && <p className="text-sm text-muted-foreground">No attachments yet.</p>}
       {attachments.data !== undefined && attachments.data.length > 0 && (
@@ -99,17 +99,17 @@ export function AttachmentsSection({ workspaceId, projectId, taskId, role, userI
             const Icon = attachment.content_type === "PDF" ? FileText : Image;
             return (
               <li key={attachment.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                <Icon size={16} className="shrink-0 text-muted-foreground" />
+                <Icon className="shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate">{attachment.original_name}</p>
-                  <p className="text-xs text-muted-foreground">{formatBytes(attachment.size_bytes)}</p>
+                  <p className="text-xs text-muted-foreground tabular-nums">{formatBytes(attachment.size_bytes)}</p>
                 </div>
                 <Button variant="ghost" size="icon" aria-label="Download" onClick={() => onDownload(attachment)}>
-                  <Download size={16} />
+                  <Download />
                 </Button>
                 {canDeleteAttachment(role, userId, attachment) && (
                   <Button variant="ghost" size="icon" aria-label="Delete attachment" onClick={() => onDelete(attachment)}>
-                    <Trash2 size={16} />
+                    <Trash2 />
                   </Button>
                 )}
               </li>
